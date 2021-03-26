@@ -37,6 +37,8 @@ body {
   font-family: "Open Sans", Arial, sans-serif;
   font-weight: 300;
   font-size: 22px;
+  filter: blur(15px);
+  transition: filter 0.5s;
 }
 
 .weather {

@@ -7,6 +7,7 @@ let pressure = document.querySelector(".weather_indicaton--pressure>.value");
 let weather_image = document.querySelector(".weather_image");
 let weather_temperature = document.querySelector(".weather_temperature");
 let forecastBlock = document.querySelector(".weather_forecast");
+let datalist = document.getElementById("suggestions");
 let weatherAPIKey = "390a554fa4e2ddea1ff6d3f5c8699174";
 let weatheAPIEndpoint =
   "https://api.openweathermap.org/data/2.5/weather?units=metric&appid=" +
@@ -14,6 +15,11 @@ let weatheAPIEndpoint =
 let forecastBasedEndpoint =
   "https://api.openweathermap.org/data/2.5/forecast?units=metric&appid=" +
   weatherAPIKey;
+
+let geocodingBaseEndpoint =
+  "http://api.openweathermap.org/geo/1.0/direct?&limit=5&appid=" +
+  weatherAPIKey +
+  "&q=";
 
 let weatherImages = [
   {
@@ -78,14 +84,37 @@ let getWeatherByCityID = async (cityID) => {
   return daily;
 };
 
+let weatherForCity = async (city) => {
+  let weather = await getWeatherByCityName(city);
+  if (weather.code == "404") {
+    return;
+  }
+  let cityID = weather.id;
+  updateCurrentWeather(weather);
+  let forecastDaily = await getWeatherByCityID(cityID);
+  updateForecast(forecastDaily);
+};
+
 searchInp.addEventListener("keydown", async (e) => {
   if (e.keyCode === 13) {
-    let weather = await getWeatherByCityName(searchInp.value);
-    let cityID = weather.id;
-    updateCurrentWeather(weather);
-    let forecastDaily = await getWeatherByCityID(cityID);
-    updateForecast(forecastDaily);
+    weatherForCity(searchInp.value);
   }
+});
+
+searchInp.addEventListener("input", async () => {
+  if (searchInp.value.length <= 2) {
+    return;
+  }
+  let endpoint = geocodingBaseEndpoint + searchInp.value;
+  let result = await (await fetch(endpoint)).json();
+  datalist.innerHTML = "";
+  result.forEach((city) => {
+    let option = document.createElement("option");
+    option.value = `${city.name}, ${city.state ? city.state : ""}, ${
+      city.country
+    }`;
+    datalist.appendChild(option);
+  });
 });
 
 let updateCurrentWeather = (data) => {
@@ -144,3 +173,10 @@ let updateForecast = (forecast) => {
 let dayOfWeek = (dt = new Date().getTime()) => {
   return new Date(dt).toLocaleDateString("en-EN", { weekday: "long" });
 };
+
+let init = async () => {
+  await weatherForCity("Vancouver");
+  document.body.style.filter = "blur(0)";
+};
+
+init();
